@@ -570,15 +570,36 @@ def _sloped_neckline_series(
     p_end: dict,
     confirm_date: pd.Timestamp,
 ) -> pd.Series:
-    """Build a sloped neckline series projected to the confirmation date."""
+    """Build a visually straight neckline on mplfinance candle coordinates.
+
+    Pattern detection uses calendar-day slope through ``neckline_value``.
+    mplfinance compresses weekends and plots trading rows at equal distances,
+    so plotting calendar-day values directly creates visible bends. Interpolate
+    and extend the display line using trading-row positions instead.
+    """
 
     series = pd.Series(index=index, dtype="float64")
     start = pd.Timestamp(p_start["date"])
+    anchor = pd.Timestamp(p_end["date"])
     end = pd.Timestamp(confirm_date)
-    mask = (series.index >= start) & (series.index <= end)
 
-    for date in series.index[mask]:
-        series.loc[date] = neckline_value(p_start, p_end, date)
+    if start not in series.index or anchor not in series.index:
+        return series
+
+    start_pos = series.index.get_loc(start)
+    anchor_pos = series.index.get_loc(anchor)
+    end_pos = series.index.get_loc(end) if end in series.index else len(series) - 1
+
+    row_span = anchor_pos - start_pos
+    if row_span == 0:
+        return series
+
+    slope_per_row = (float(p_end["price"]) - float(p_start["price"])) / row_span
+
+    for row_pos in range(start_pos, end_pos + 1):
+        series.iloc[row_pos] = float(p_start["price"]) + slope_per_row * (
+            row_pos - start_pos
+        )
 
     return series
 
