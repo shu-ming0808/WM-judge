@@ -12,7 +12,7 @@ The main presentation is in Jupyter Notebook. Reusable functions are stored in `
 - Python 3.10+
 - CSV source: `2330_台積電_2025.csv`
 - Required CSV columns: `Date/date`, `Open`, `High`, `Low`, `Close`, `Volume`, `MA5`, `MA10`, `MA20`
-- If the CSV does not contain `Trend`, the project infers it from MA values.
+- If the CSV does not contain `Trend`, the project follows slide 9 of the 0518 lecture: `MA5 > MA10 > MA20` and `Close > MA5` means a bull trend; the reversed inequalities mean a bear trend; every other case means a sideways trend.
 
 ## Setup
 
@@ -34,7 +34,7 @@ notebooks/0525_patterns.ipynb
 The notebook will:
 
 1. Read daily OHLCV data from `2330_台積電_2025.csv`.
-2. Infer `Trend` from MA values when needed.
+2. Infer `Trend` from the 0518 lecture's MA-ordering rule when needed.
 3. Build turning points from the `Trend` column.
 4. Clean the ZigZag sequence.
 5. Detect W Bottom / M Top patterns.

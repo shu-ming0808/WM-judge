@@ -36,19 +36,28 @@ def set_chinese_font() -> None:
 
 
 def infer_trend(df: pd.DataFrame) -> pd.Series:
-    """Infer Trend from MA ordering when the CSV does not provide Trend.
+    """Infer TrendForTan from the MA ordering rule on slide 9 of the lecture.
 
-    The 0525 lecture assumes Trend is already present in the CSV. This file does
-    not have that column, so we derive it from MA order:
-    MA5 > MA10 > MA20 -> 上漲, MA5 < MA10 < MA20 -> 下跌, otherwise 橫盤.
+    The CSV does not contain TrendForTan, so classify each trading day:
+    - 多頭: MA5 > MA10 > MA20 and Close > MA5.
+    - 空頭: MA5 < MA10 < MA20 and Close < MA5.
+    - 橫盤整理: all other cases.
     """
 
-    up = (df["MA5"] > df["MA10"]) & (df["MA10"] > df["MA20"])
-    down = (df["MA5"] < df["MA10"]) & (df["MA10"] < df["MA20"])
+    bull = (
+        (df["MA5"] > df["MA10"])
+        & (df["MA10"] > df["MA20"])
+        & (df["Close"] > df["MA5"])
+    )
+    bear = (
+        (df["MA5"] < df["MA10"])
+        & (df["MA10"] < df["MA20"])
+        & (df["Close"] < df["MA5"])
+    )
 
-    trend = pd.Series("橫盤", index=df.index, dtype="object")
-    trend.loc[up] = "上漲"
-    trend.loc[down] = "下跌"
+    trend = pd.Series("橫盤整理", index=df.index, dtype="object")
+    trend.loc[bull] = "多頭"
+    trend.loc[bear] = "空頭"
     return trend
 
 
@@ -114,9 +123,9 @@ def load_stock_data(
 def normalize_trend(trend: object) -> str:
     """Convert database trend labels into up/down/flat labels."""
 
-    if trend == "上漲":
+    if trend in {"多頭", "上漲", "上漲趨勢"}:
         return "up"
-    if trend == "下跌":
+    if trend in {"空頭", "下跌", "下跌趨勢"}:
         return "down"
     return "flat"
 
